@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Network Line</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+		html, body, #map {
+			width: 100%;
+			height: 100%;
+			margin: 0;
+		}
+		#basemaps-wrapper {
+			position: absolute;
+			top: 10px;
+			right: 10px;
+			z-index: 400;
+			background: white;
+			padding: 10px;
+		}
+		.basemaps {
+			margin-bottom: 5px;
+		}
+		
+		/* Copied from bootstrap */
+		.table>tbody>tr>td, 
+		.table>tbody>tr>th, 
+		.table>tfoot>tr>td, 
+		.table>tfoot>tr>th, 
+		.table>thead>tr>td, 
+		.table>thead>tr>th {
+			padding: 8px;
+			line-height: 1.42857143;
+			vertical-align: top;
+			border-top: 1px solid #ddd;
+		}
+		.table-striped>tbody>tr:nth-of-type(odd) {
+			background-color: #f9f9f9;
+		}
+    </style>
+
+    <!-- Leaflet -->
+    <!-- <link rel="stylesheet" href="https://unpkg.com/leaflet@1.4.0/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.4.0/dist/leaflet.js"></script> -->
+	<link rel="stylesheet" href="http://localhost/assets/vendors/leafletjs/map/v1.4.0/dist/leaflet.css" />
+    <script src="http://localhost/assets/vendors/leafletjs/map/v1.4.0/dist/leaflet.js"></script>
+
+	<script type="text/javascript"  src="http://localhost/assets/vendors/leafletjs/plugins/Leaflet.VectorGrid/1.3.0/dist/Leaflet.VectorGrid.js"></script>
+
+	<!-- Tangram -->
+	<!-- <script src="https://unpkg.com/tangram@0.20.1/dist/tangram.min.js"></script> -->
+	<script src="http://localhost/assets/vendors/tangram/0.20.1/dist/tangram.min.js"></script>
+	<script src="leaflet-hash.js"></script>
+	
+	<script src="VT_Distribution_Network_Phase_3.js"></script>
+</head>
+
+<body>
+<div id="map"></div>
+<div id="basemaps-wrapper" class="leaflet-bar">
+	<select id="basemaps" class="basemaps">
+		<option value="tron_9845c">Tron 9845C</option>
+		<option value="esri_imagery" selected>ESRI Imagery</option>
+	</select>
+</div>
+
+<script>
+
+
+var map = L.map('map',{}); // Jakarta
+var hash = new L.Hash(map);
+
+// from refill-style
+// location
+var url_hash = window.location.hash.slice(1).split('/'); 
+var map_start_location = [-6.1800, 106.8228, 12]; // 
+var defaultpos = true; // use default position
+
+// convert tile coordinates to lat-lng
+// from http://gis.stackexchange.com/questions/17278/calculate-lat-lon-bounds-for-individual-tile-generated-from-gdal2tiles
+function tile2long(x,z) { return (x/Math.pow(2,z)*360-180); }
+function tile2lat(y,z) {
+	var n=Math.PI-2*Math.PI*y/Math.pow(2,z);
+	return (180/Math.PI*Math.atan(0.5*(Math.exp(n)-Math.exp(-n))));
+}
+// location is passed through url
+if (url_hash.length == 3) {
+	var defaultpos = false;
+	if (url_hash[1] > 180) { // parse hash as tile coordinates
+		// example: http://localhost:9001/#15/5242/12663
+		// add .5 to coords to center tile on screen
+		map_start_location = [tile2lat(parseFloat(url_hash[2]) + .5, url_hash[0]), tile2long(parseFloat(url_hash[1]) + .5, url_hash[0]), url_hash[0]];
+	}
+	else { // parse hash as lat/lng coordinates
+		map_start_location = [url_hash[1],url_hash[2], url_hash[0]];
+		// convert from strings
+		map_start_location = map_start_location.map(Number);
+	}
+}
+
+map.setView(map_start_location.slice(0, 2), map_start_location[2]);
+
+
+
+var basemapLayer;
+
+  function setBasemap (basemap) {
+    if (basemapLayer) {
+      map.removeLayer(basemapLayer);
+    }
+	console.log(basemap);
+	if(basemap == "tron_9845c"){
+		L.setOptions(map, {zoomSnap:0 , maxZoom:18});
+		basemapLayer = Tangram.leafletLayer({
+			scene : { import : 'http://localhost/_ark/ark_dev/assets/maps/vector_styles/dev/nextzen/sandbox/9845C.yaml' }
+		});
+	}else{
+		L.setOptions(map, { zoomSnap :1, maxZoom:18}); //leaflet default 
+		basemapLayer = L.tileLayer('http://localhost/cache/tileproxy_read.php?z={z}&x={x}&y={y}&r=google_sat', {});
+		//basemapLayer = L.tileLayer('//server.arcgisonline.com/ArcGIS/rest/services/{variant}/MapServer/tile/{z}/{y}/{x}', {});
+	}
+	
+    map.addLayer(basemapLayer);
+	basemapLayer.bringToBack();
+  }
+  
+document
+    .querySelector('#basemaps')
+    .addEventListener('change', function (e) {
+		setBasemap(e.target.value);
+    });
+	
+//var url = '//_ark/ark_dev/apis/map/tile_provider/get_local_vector_tile/idn_mdm_amicon_electricity_distribution_network/{x}/{y}/{z}/protobuf';
+var url = 'http://localhost/cache/tileproxy_vector_geo.php?z={z}&y={y}&x={x}&r=amicon_distribution_network';
+var dnl = new Distribution_Network_Phase_3(map, {url:url});
+
+setBasemap('esri_imagery');
+map.addLayer(dnl);
+
+/*
+
+map.on('viewreset', mapOnViewResetHandler, this);
+var moveendTimeoutID = -1;
+function mapOnViewResetHandler() 
+{
+	if(moveendTimeoutID > -1) clearTimeout(moveendTimeoutID);
+	moveendTimeoutID = setTimeout( function() {
+		
+		var zoom = map.getZoom();
+		var scale = map.getZoomScale(zoom),
+			latlng = map.getCenter(),
+			viewHalf = map.getSize().divideBy(2),
+			containerPoint = latlng instanceof L.Point ? latlng : map.latLngToContainerPoint(latlng),
+			centerOffset = containerPoint.subtract(viewHalf).multiplyBy(1 - 1 / scale),
+			newCenter = map.containerPointToLatLng(viewHalf.add(centerOffset));
+			
+		map._moveEnd(true);
+		
+
+		//probably because of this round grid layer scaling transform: https://github.com/Leaflet/Leaflet/pull/2382 
+		return map._move(newCenter, Math.round(zoom), {
+			flyTo: true
+		});
+	},500);
+}
+
+*/
+
+</script>
+</body>
+</html>

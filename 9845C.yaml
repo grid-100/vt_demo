@@ -1,23 +1,16 @@
 ﻿# Author @patriciogv - 2015
 
 import:
-    #- https://tangrams.github.io/blocks/global.yaml
-    #- https://tangrams.github.io/blocks/color/tools.yaml
-    #- https://tangrams.github.io/blocks/generative/random.yaml
-    #- https://tangrams.github.io/blocks/filter/tv.yaml
-    #- https://tangrams.github.io/blocks/shapes/polygons.yaml
-    #- https://tangrams.github.io/blocks/shapes/cross.yaml
-    - http://localhost/assets/vendors/tangram/blocks/global.yaml
-    - http://localhost/assets/vendors/tangram/blocks/color/tools.yaml
-    - http://localhost/assets/vendors/tangram/blocks/generative/random.yaml
-    - http://localhost/assets/vendors/tangram/blocks/filter/tv.yaml
-    - http://localhost/assets/vendors/tangram/blocks/shapes/polygons.yaml
-    - http://localhost/assets/vendors/tangram/blocks/shapes/cross.yaml
+    - https://tangrams.github.io/blocks/global.yaml
+    - https://tangrams.github.io/blocks/color/tools.yaml
+    - https://tangrams.github.io/blocks/generative/random.yaml
+    - https://tangrams.github.io/blocks/filter/tv.yaml
+    - https://tangrams.github.io/blocks/shapes/polygons.yaml
+    - https://tangrams.github.io/blocks/shapes/cross.yaml
 sources:
     nextzen:
         type: MVT
-        # url: https://tile.nextzen.org/tilezen/vector/v1/512/all/{z}/{x}/{y}.mvt
-        url: http://localhost/cache/tileproxy_vector.php?z={z}&y={y}&x={x}&r=nextgen_basemap_vector_512
+        url: https://tile.nextzen.org/tilezen/vector/v1/512/all/{z}/{x}/{y}.mvt
         tile_size: 512
         max_zoom: 16
         url_params:

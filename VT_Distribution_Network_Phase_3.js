@@ -76,7 +76,36 @@
 						opacity: (zoom > 16 ) ? 0.8 : 0.5,
 						fillOpacity: 0
 					}
-				}
+				},
+				'gardu_distribusi_disjaya': function(properties, zoom) {
+					/* return {
+						weight: 2,
+						color: 'red',
+						opacity: 1,
+						fillColor: 'yellow',
+						fill: true,
+						radius: 6,
+						fillOpacity: 0.7
+					}  */
+					var multiplier = 1 << (zoom - scope.vectorgrid_zoomTresshold);
+					if(zoom < 14 ) return {
+						weight:0, 
+						fill:false
+					};
+					return {
+						weight: zoom > 15  ? 1.6 :
+								zoom > 14  ? 1 :
+								zoom > 13  ? 0.8 : 0.8,
+						color: 'red',
+						opacity: 1,
+						fillColor: 'yellow',
+						fill: true,
+						radius: zoom > 16  ? 6 :
+								zoom > 15  ? 5 :
+								zoom > 14 ? 4 : 2,
+						fillOpacity: 0.7
+					}
+				},
 			},
 			//indexMaxZoom: 5,       // max zoom in the initial tile index
 			dataMaxZoom:16,

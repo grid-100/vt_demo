@@ -114,7 +114,7 @@ var basemapLayer;
 		});
 	}else{
 		L.setOptions(map, { zoomSnap :1, maxZoom:18}); //leaflet default 
-		basemapLayer = L.tileLayer('//server.arcgisonline.com/ArcGIS/rest/services/WorldImagery/MapServer/tile/{z}/{y}/{x}', {});
+		basemapLayer = L.tileLayer('//server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {});
 	}
 	
     map.addLayer(basemapLayer);

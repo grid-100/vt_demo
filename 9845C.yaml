@@ -1,0 +1,213 @@
+﻿# Author @patriciogv - 2015
+
+import:
+    #- https://tangrams.github.io/blocks/global.yaml
+    #- https://tangrams.github.io/blocks/color/tools.yaml
+    #- https://tangrams.github.io/blocks/generative/random.yaml
+    #- https://tangrams.github.io/blocks/filter/tv.yaml
+    #- https://tangrams.github.io/blocks/shapes/polygons.yaml
+    #- https://tangrams.github.io/blocks/shapes/cross.yaml
+    - http://localhost/assets/vendors/tangram/blocks/global.yaml
+    - http://localhost/assets/vendors/tangram/blocks/color/tools.yaml
+    - http://localhost/assets/vendors/tangram/blocks/generative/random.yaml
+    - http://localhost/assets/vendors/tangram/blocks/filter/tv.yaml
+    - http://localhost/assets/vendors/tangram/blocks/shapes/polygons.yaml
+    - http://localhost/assets/vendors/tangram/blocks/shapes/cross.yaml
+sources:
+    nextzen:
+        type: MVT
+        # url: https://tile.nextzen.org/tilezen/vector/v1/512/all/{z}/{x}/{y}.mvt
+        url: http://localhost/cache/tileproxy_vector.php?z={z}&y={y}&x={x}&r=nextgen_basemap_vector_512
+        tile_size: 512
+        max_zoom: 16
+        url_params:
+            api_key: fePL3B1-S92uQ8gAvdCW7g
+        max_zoom: 16
+
+scene:
+    background:
+        color: [0.012, 0.012, 0.106]
+
+cameras:
+    cam:
+        type: perspective
+
+layers:
+    earth:
+        data: { source: nextzen }
+        draw:
+            border-red:
+                order: global.order
+                color: [0.757, 0.961, 1.000]
+                width: 1px
+            border-green:
+                order: global.order
+                color: [0.757, 0.961, 1.000]
+                width: 1px
+            border-blue:
+                order: global.order
+                color: [0.757, 0.961, 1.000]
+                width: 1px
+    water:
+        data: { source: nextzen }
+        filter: { kind: lake }
+        draw:
+            border-red:
+                order: global.order
+                color: [0.757, 0.961, 1.000]
+                width: .8px
+            border-green:
+                order: global.order
+                color: [0.757, 0.961, 1.000]
+                width: .8px
+            border-blue:
+                order: global.order
+                color: [0.757, 0.961, 1.000]
+                width: .8px
+    boundaries:
+        data: { source: nextzen }
+        draw:
+            border-red:
+                order: global.order
+                color: [0.451, 0.573, 0.596]
+                width: .4px
+            border-green:
+                order: global.order
+                color: [0.451, 0.573, 0.596]
+                width: .4px
+            border-blue:
+                order: global.order
+                color: [0.451, 0.573, 0.596]
+                width: .4px
+    roads:
+        data: { source: nextzen }
+        filter: { not: { kind: [rail, ferry] } }
+        draw:
+            border-red:
+                order: global.order
+                color: [0.451, 0.573, 0.596]
+                width: .3px
+            border-green:
+                order: global.order
+                color: [0.451, 0.573, 0.596]
+                width: .3px
+            border-blue:
+                order: global.order
+                color: [0.451, 0.573, 0.596]
+                width: .3px
+    places:
+        data: { source: nextzen }
+        filter: { name: true }
+        draw:
+            icons:
+                color: global.pseudoRandomColor
+                size: [[13, 20px], [15, 40px]]
+
+styles:
+    border-common:
+        base: lines
+        mix: [filter-tv]
+        blend: add
+        texcoords: true
+        animated: true
+        shaders:
+            defines:
+                TV_FREQ: 2.
+            uniforms:
+                u_offset: 1
+                u_offsetColor: [1,1,1]
+            blocks:
+                width: |
+                    vec2 pos = (u_modelView * position).xy;
+                    vec2 pos_offset = pos.xy*u_offset;
+                    vec2 diff = pos.xy-pos_offset;
+                    float offset = length(diff)*u_meters_per_pixel;
+                    width *= 2.0;//offset;
+                position: |
+                    position.xy += diff;
+                color: |
+                    color.rgb *= u_offsetColor;
+                    vec2 st = gl_FragCoord.xy/u_resolution.xy;
+                    st -= .5;
+                    color *= 1.0-pow(dot(st,st)*.5,.8);
+                    color *= smoothstep(0.,1.,sin(v_texcoord.x*3.1415));
+    border-red:
+        mix: border-common
+        shaders:
+            uniforms:
+                u_offset: 1.005
+                u_offsetColor: [1,.5,.5]
+    border-green:
+        mix: border-common
+        shaders:
+            uniforms:
+                u_offsetColor: [.5,1.,.5]
+    border-blue:
+        mix: border-common
+        shaders:
+            uniforms:
+                u_offset: .995
+                u_offsetColor: [.5,.5,1.]
+    icons:
+        base: points
+        texcoords: true
+        mix: [color-tools, shapes-polygons, shapes-cross, filter-tv, generative-random]
+        shaders:
+            defines:
+                TV_FREQ: 1.8
+            blocks:
+                global: |
+                    // draw the border of a polygon in the center
+                    // where N is the number of sides of it
+                    // ================================
+                    float shapeBorder (vec2 st, int N, float size, float width) {
+                        return shape(st,N,size)-shape(st,N,size-width);
+                    }
+                color: |
+                    vec2 st = gl_FragCoord.xy/u_resolution.xy;
+
+                    st -= .5;
+                    vec2 dir = normalize(st);
+                    float rad = dot(st,st)*.5;
+
+                    vec2 tex_uv = v_texcoord.xy;
+                    vec3 color_offsets = vec3(.5,0.,1.)*rad;
+
+                    float bri = getBrightness(color);
+                    float intensity = getIntensity(color);
+                    float rnd = random(bri);
+                    float rnd2 = random(intensity);
+
+                    if (rnd < .33333) {
+                        color.rgb = vec3(0.586,0.992,0.833);
+                    } else if (rnd < .66666) {
+                        color.rgb = vec3(0.882,0.218,0.355);
+                    } else {
+                        color.rgb = vec3(0.520,0.914,0.976);
+                    }
+
+                    float size = .2+rnd2*.4;
+
+                    if (rnd < .1) {
+                        color.r *= cross(tex_uv+dir*color_offsets.r, size*3., size*.5);
+                        color.g *= cross(tex_uv+dir*color_offsets.g, size*3., size*.5);
+                        color.b *= cross(tex_uv+dir*color_offsets.b, size*3., size*.5);
+                    } else {
+                        int sides = int(3.+mod(rnd*10.,5.));
+                        if (sides == 3){
+                            // Scale and translate triangle
+                            size *= .7;
+                            tex_uv += vec2(0.,.2);
+                        } else if (sides == 6) {
+                            // Rotate hexagon
+                            tex_uv = tex_uv.yx;
+                        } else if (sides == 7) {
+                            // Make circle
+                            sides = 360;
+                        }
+                        color.r *= shapeBorder(tex_uv+dir*color_offsets.r, sides, size,.2);
+                        color.g *= shapeBorder(tex_uv+dir*color_offsets.g, sides, size,.2);
+                        color.b *= shapeBorder(tex_uv+dir*color_offsets.b, sides, size,.2);
+                    }
+
+                    color.a = max(color.r,max(color.g,color.b))*(1.0-rad);

@@ -110,7 +110,7 @@ var basemapLayer;
 	if(basemap == "tron_9845c"){
 		L.setOptions(map, {zoomSnap:0 , maxZoom:18});
 		basemapLayer = Tangram.leafletLayer({
-			scene : { import : 'http://arkdata.id/assets/maps/vector_styles/prod/nextzen/sandbox/9845C.yaml' }
+			scene : { import : '9845C.yaml' }
 		});
 	}else{
 		L.setOptions(map, { zoomSnap :1, maxZoom:18}); //leaflet default 

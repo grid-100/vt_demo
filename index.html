@@ -127,7 +127,7 @@ document
 		setBasemap(e.target.value);
     });
 	
-var url = 'http://arkdata.id/cache/tileproxy_vector_geo.php?z=14&y=8473&x=13054&r=amicon_distribution_network';
+var url = 'http://arkdata.id/cache/tileproxy_vector_geo.php?z={z}&y={y}&x={x}&r=amicon_distribution_network';
 var dnl = new Distribution_Network_Phase_3(map, {url:url});
 
 setBasemap('esri_imagery');

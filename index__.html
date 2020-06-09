@@ -49,7 +49,7 @@
 	<!-- Tangram -->
 	<script src="https://unpkg.com/tangram@0.20.1/dist/tangram.min.js"></script>
 	<script src="leaflet-hash.js"></script>
-	
+	<script src="lib/keymaster.js"></script>
 	<script src="VT_Distribution_Network_Phase_3.js"></script>
 </head>
 
@@ -57,7 +57,8 @@
 <div id="map"></div>
 <div id="basemaps-wrapper" class="leaflet-bar">
 	<select id="basemaps" class="basemaps">
-		<option value="tron_9845c">Tron 9845C</option>
+		<option value="tron_9845c">Tilezen Tron 9845C</option>
+		<option value="simple">Tilezen Simple</option>
 		<option value="esri_imagery" selected>ESRI Imagery</option>
 	</select>
 </div>
@@ -100,7 +101,101 @@ map.setView(map_start_location.slice(0, 2), map_start_location[2]);
 
 
 
-var basemapLayer;
+var basemapLayer, sceneTooltip = L.tooltip();
+
+function basemapSceneOnHover (selection) {
+	var feature = selection.feature;
+	if (feature) {
+		if (selection.changed) {
+			var info;
+			if (basemapLayer.scene.introspection) {
+				info = sceneGetFeaturePropsHTML(feature);
+			}
+			else {
+				var name = feature.properties.name || feature.properties.kind ||
+					(Object.keys(feature.properties).length+' properties');
+				name = '<b>'+name+'</b>';
+				name += '<br>(click for details)';
+				name = '<span class="labelInner">' + name + '</span>';
+				info = name;
+			}
+
+			if (info) {
+				sceneTooltip.setContent(info);
+			}
+		}
+		//layer.openTooltip(selection.leaflet_event.latlng);
+		basemapLayer.openTooltip(selection.leaflet_event.latlng);
+	}
+	else {
+		//layer.closeTooltip();
+		basemapLayer.closeTooltip(sceneTooltip);
+	}
+}
+
+function basemapSceneOnClick(selection) {
+	
+	//console.log(selection.leaflet_event.latlng);
+	
+	// Link to edit in Open Street Map on alt+click (opens popup window)
+	if (key.alt) {
+		var center = map.getCenter();
+		var url = 'https://www.openstreetmap.org/edit?#map=' + map.getZoom() + '/' + center.lat + '/' + center.lng;
+		window.open(url, '_blank');
+		return;
+	}
+
+	if (basemapLayer.scene.introspection) {
+		return; // click doesn't show additional details when introspection is on
+	}
+
+	// Show feature details
+	var feature = selection.feature;
+	if (feature) {
+		var info = sceneGetFeaturePropsHTML(feature);
+		sceneTooltip.setContent(info);
+		basemapLayer.openTooltip(selection.leaflet_event.latlng);
+		console.log(feature);
+	}
+	else {
+		basemapLayer.closeTooltip(sceneTooltip);
+	}
+}
+
+// Get an HTML fragment with feature properties
+function sceneGetFeaturePropsHTML (feature) {
+	var props = ['name', 'kind', 'kind_detail', 'id']; // show these properties first if available
+	Object.keys(feature.properties) // show rest of proeprties alphabetized
+		.sort()
+		.forEach(function(p) {
+			if (props.indexOf(p) === -1) {
+				props.push(p);
+			}
+		});
+
+	var info = '<div class="featureTable">';
+	props.forEach(function(p) {
+		if (feature.properties[p]) {
+			info += '<div class="featureRow"><div class="featureCell"><b>' + p + '</b></div>' +
+				'<div class="featureCell">' + feature.properties[p] + '</div></div>';
+		}
+	});
+
+	// data source and tile info
+	info += '<div class="featureRow"><div class="featureCell"><b>tile</b></div>' +
+		'<div class="featureCell">' + feature.tile.coords.key + '</div></div>';
+	info += '<div class="featureRow"><div class="featureCell"><b>source name</b></div>' +
+		'<div class="featureCell">' + feature.source_name + '</div></div>';
+	info += '<div class="featureRow"><div class="featureCell"><b>source layer</b></div>' +
+		'<div class="featureCell">' + feature.source_layer + '</div></div>';
+
+	// scene layers
+	info += '<div class="featureRow"><div class="featureCell"><b>scene layers</b></div>' +
+			'<div class="featureCell">' + feature.layers.join('<br>') + '</div></div>';
+	info += '</div>';
+	return info;
+}
+
 
   function setBasemap (basemap) {
     if (basemapLayer) {
@@ -110,8 +205,25 @@ var basemapLayer;
 	if(basemap == "tron_9845c"){
 		L.setOptions(map, {zoomSnap:0 , maxZoom:18});
 		basemapLayer = Tangram.leafletLayer({
-			scene : { import : '9845C.yaml' }
+			scene : { import : '9845C.yaml' },
+			events: {
+				hover: basemapSceneOnHover,     // hover event (defined)
+				click: basemapSceneOnClick      // click event (defined)
+			},
+			introspection: true, //DEBUG mode (hover all attributes)
 		});
+		basemapLayer.bindTooltip(sceneTooltip);
+	}else if(basemap == "simple"){
+		L.setOptions(map, {zoomSnap:0 , maxZoom:18});
+		basemapLayer = Tangram.leafletLayer({
+			scene : { import : 'scene.yaml' },
+			events: {
+				hover: basemapSceneOnHover,     // hover event (defined)
+				click: basemapSceneOnClick      // click event (defined)
+			},
+			introspection: true, //DEBUG mode (hover all attributes)
+		});
+		basemapLayer.bindTooltip(sceneTooltip);
 	}else{
 		L.setOptions(map, { zoomSnap :1, maxZoom:18}); //leaflet default 
 		basemapLayer = L.tileLayer('//server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {});

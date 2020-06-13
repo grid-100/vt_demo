@@ -72,7 +72,7 @@ var hash = new L.Hash(map);
 // from refill-style
 // location
 var url_hash = window.location.hash.slice(1).split('/'); 
-var map_start_location = [-6.1800, 106.8228, 12]; // 
+var map_start_location = [-6.1800, 106.8228, 15]; // 
 var defaultpos = true; // use default position
 
 // convert tile coordinates to lat-lng
@@ -239,7 +239,7 @@ document
 		setBasemap(e.target.value);
     });
 	
-var url = 'http://arkdata.id/cache/tileproxy_vector_geo.php?z={z}&y={y}&x={x}&r=amicon_distribution_network';
+var url = 'http://arkdata.id/apis/map/tile_provider/vt_proxy/amicon_distribution_network/{x}/{y}/{z}';
 var dnl = new Distribution_Network_Phase_3(map, {url:url});
 
 setBasemap('esri_imagery');
